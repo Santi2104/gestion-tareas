@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Seeders;
 
 use App\Enums\PriorityLevel;
 use App\Enums\TagName;
@@ -11,7 +11,7 @@ use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class SeederTest extends TestCase
+class DatabaseSeederTest extends TestCase
 {
     use RefreshDatabase;
 

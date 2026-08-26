@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Models;
 
 use App\Enums\PriorityLevel;
 use App\Enums\TagName;
@@ -11,7 +11,7 @@ use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class TaskModelTest extends TestCase
+class TaskTest extends TestCase
 {
     use RefreshDatabase;
 

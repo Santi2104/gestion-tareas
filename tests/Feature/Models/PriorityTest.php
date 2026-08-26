@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature;
+namespace Tests\Feature\Models;
 
 use App\Enums\PriorityLevel;
 use App\Models\Priority;
@@ -8,7 +8,7 @@ use App\Models\Task;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
-class PriorityModelTest extends TestCase
+class PriorityTest extends TestCase
 {
     use RefreshDatabase;
 
