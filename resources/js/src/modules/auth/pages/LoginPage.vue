@@ -16,13 +16,15 @@
                 </q-card-section>
 
                 <q-card-section>
-                    <q-form @submit="handleLogin" class="q-gutter-md">
+                    <q-form @submit.prevent="handleLogin" class="q-gutter-md">
                         <q-input
-                            v-model="form.email"
+                            v-model="email"
+                            @blur="handleEmailBlur"
                             type="email"
                             label="Correo electrónico"
                             outlined
-                            :rules="[(val) => !!val || 'El email es requerido']"
+                            :error="emailMeta.touched && !!errors.email"
+                            :error-message="errors.email"
                             autocomplete="email"
                         >
                             <template v-slot:prepend>
@@ -31,13 +33,13 @@
                         </q-input>
 
                         <q-input
-                            v-model="form.password"
+                            v-model="password"
+                            @blur="handlePasswordBlur"
                             :type="showPassword ? 'text' : 'password'"
                             label="Contraseña"
                             outlined
-                            :rules="[
-                                (val) => !!val || 'La contraseña es requerida',
-                            ]"
+                            :error="passwordMeta.touched && !!errors.password"
+                            :error-message="errors.password"
                             autocomplete="current-password"
                         >
                             <template v-slot:prepend>
@@ -58,7 +60,7 @@
 
                         <div class="row items-center justify-between">
                             <q-checkbox
-                                v-model="form.remember"
+                                v-model="remember"
                                 label="Recordarme"
                                 color="primary"
                             />
@@ -85,25 +87,46 @@
 import { ref } from "vue";
 import { useRouter, useRoute } from "vue-router";
 import { useQuasar } from "quasar";
+import { useForm, useField } from "vee-validate";
+import * as yup from "yup";
 import { useAuthStore } from "../stores/useAuthStore";
 import { getSafeRedirectUrl } from "../utils/redirectSanitizer";
+import { extractBackendErrors } from "../../../utils/backendErrorMapper";
 
 const $q = useQuasar();
 const router = useRouter();
 const route = useRoute();
 const authStore = useAuthStore();
 
-const form = ref({
-    email: "",
-    password: "",
-    remember: false,
+const schema = yup.object({
+    email: yup
+        .string()
+        .required("El correo electrónico es requerido")
+        .email("Formato de correo electrónico inválido"),
+    password: yup
+        .string()
+        .required("La contraseña es requerida"),
+    remember: yup.boolean(),
 });
+
+const { handleSubmit, errors, setErrors } = useForm({
+    validationSchema: schema,
+    initialValues: {
+        email: "",
+        password: "",
+        remember: false,
+    },
+});
+
+const { value: email, handleBlur: handleEmailBlur, meta: emailMeta } = useField<string>("email");
+const { value: password, handleBlur: handlePasswordBlur, meta: passwordMeta } = useField<string>("password");
+const { value: remember } = useField<boolean>("remember");
 
 const showPassword = ref(false);
 
-const handleLogin = async () => {
+const handleLogin = handleSubmit(async (values) => {
     try {
-        await authStore.login(form.value);
+        await authStore.login(values);
         $q.notify({
             type: "positive",
             message: "¡Sesión iniciada correctamente!",
@@ -113,19 +136,21 @@ const handleLogin = async () => {
         const redirectTarget = getSafeRedirectUrl(route.query.redirect);
         await router.push(redirectTarget);
     } catch (error: any) {
-        const serverMessage = error.response?.data?.message;
-        const message =
-            error.response?.status === 422
-                ? "Credenciales incorrectas. Por favor verifica tu correo y contraseña."
-                : serverMessage ||
-                  "Error al iniciar sesión. Intenta nuevamente.";
+        const backendErrors = extractBackendErrors(error);
+        if (Object.keys(backendErrors).length > 0) {
+            setErrors(backendErrors);
+        } else {
+            const message =
+                error.response?.data?.message ||
+                "Error al iniciar sesión. Intenta nuevamente.";
 
-        $q.notify({
-            type: "warning",
-            message: message,
-            position: "top-right",
-            timeout: 4000,
-        });
+            $q.notify({
+                type: "negative",
+                message: message,
+                position: "top-right",
+                timeout: 4000,
+            });
+        }
     }
-};
+});
 </script>

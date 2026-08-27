@@ -12,26 +12,32 @@
         <q-form @submit.prevent="onSubmit" class="q-gutter-md">
           <!-- Title -->
           <q-input
-            v-model="form.title"
+            v-model="title"
+            @blur="handleTitleBlur"
             label="Título *"
             outlined
             dense
-            :rules="[val => !!val || 'El título es obligatorio']"
+            :error="titleMeta.touched && !!errors.title"
+            :error-message="errors.title"
           />
 
           <!-- Description -->
           <q-input
-            v-model="form.description"
+            v-model="description"
+            @blur="handleDescriptionBlur"
             label="Descripción"
             type="textarea"
             outlined
             dense
             rows="3"
+            :error="descriptionMeta.touched && !!errors.description"
+            :error-message="errors.description"
           />
 
           <!-- Priority -->
           <q-select
-            v-model="form.priority_id"
+            v-model="priority_id"
+            @blur="handlePriorityBlur"
             :options="priorityOptions"
             label="Prioridad *"
             outlined
@@ -39,33 +45,39 @@
             emit-value
             map-options
             :loading="isPrioritiesLoading"
-            :rules="[val => !!val || 'La prioridad es obligatoria']"
+            :error="priorityMeta.touched && !!errors.priority_id"
+            :error-message="errors.priority_id"
           />
 
           <!-- Status -->
           <q-select
-            v-model="form.status"
+            v-model="status"
             :options="statusOptions"
             label="Estado"
             outlined
             dense
             emit-value
             map-options
+            :error="!!errors.status"
+            :error-message="errors.status"
           />
 
           <!-- Due Date -->
           <q-input
-            v-model="form.due_date"
+            v-model="due_date"
+            @blur="handleDueDateBlur"
             label="Fecha de Vencimiento"
             type="date"
             outlined
             dense
             stack-label
+            :error="dueDateMeta.touched && !!errors.due_date"
+            :error-message="errors.due_date"
           />
 
           <!-- Tags (Multiple) -->
           <q-select
-            v-model="form.tag_ids"
+            v-model="tag_ids"
             :options="tagOptions"
             label="Etiquetas"
             multiple
@@ -101,13 +113,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue';
+import { computed, watch } from 'vue';
+import { useForm, useField } from 'vee-validate';
+import * as yup from 'yup';
 import { useTaskStore } from '../stores/useTaskStore';
 import { usePrioritiesQuery } from '../composables/usePrioritiesQuery';
 import { useTagsQuery } from '../composables/useTagsQuery';
 import { useTaskMutations } from '../composables/useTaskMutations';
 import type { CreateTaskPayload, TaskStatus, UpdateTaskPayload } from '../../../types/task';
 import { formatPriorityLabel, STATUS_OPTIONS } from '../utils/taskFormatters';
+import { extractBackendErrors } from '../../../utils/backendErrorMapper';
 
 const taskStore = useTaskStore();
 const { data: priorities, isLoading: isPrioritiesLoading } = usePrioritiesQuery();
@@ -123,21 +138,33 @@ const isOpen = computed({
 
 const isEditMode = computed(() => !!taskStore.selectedTask);
 
-const form = ref<{
-  title: string;
-  description: string;
-  priority_id: number | null;
-  status: TaskStatus;
-  due_date: string;
-  tag_ids: number[];
-}>({
-  title: '',
-  description: '',
-  priority_id: null,
-  status: 'pending',
-  due_date: '',
-  tag_ids: [],
+const schema = yup.object({
+  title: yup.string().required('El título es obligatorio').max(255, 'Máximo 255 caracteres'),
+  description: yup.string().nullable(),
+  priority_id: yup.number().required('La prioridad es obligatoria').nullable(),
+  status: yup.string().required('El estado es obligatorio'),
+  due_date: yup.string().nullable(),
+  tag_ids: yup.array().of(yup.number()),
 });
+
+const { handleSubmit, errors, setErrors, resetForm } = useForm({
+  validationSchema: schema,
+  initialValues: {
+    title: '',
+    description: '',
+    priority_id: null as number | null,
+    status: 'pending' as TaskStatus,
+    due_date: '',
+    tag_ids: [] as number[],
+  },
+});
+
+const { value: title, handleBlur: handleTitleBlur, meta: titleMeta } = useField<string>('title');
+const { value: description, handleBlur: handleDescriptionBlur, meta: descriptionMeta } = useField<string>('description');
+const { value: priority_id, handleBlur: handlePriorityBlur, meta: priorityMeta } = useField<number | null>('priority_id');
+const { value: status } = useField<TaskStatus>('status');
+const { value: due_date, handleBlur: handleDueDateBlur, meta: dueDateMeta } = useField<string>('due_date');
+const { value: tag_ids } = useField<number[]>('tag_ids');
 
 const priorityOptions = computed(() => {
   if (!priorities.value) return [];
@@ -163,51 +190,53 @@ watch(
   () => taskStore.selectedTask,
   (task) => {
     if (task) {
-      form.value = {
-        title: task.title,
-        description: task.description || '',
-        priority_id: task.priority_id,
-        status: task.status,
-        due_date: task.due_date || '',
-        tag_ids: task.tags ? task.tags.map((t) => t.id) : [],
-      };
+      resetForm({
+        values: {
+          title: task.title,
+          description: task.description || '',
+          priority_id: task.priority_id,
+          status: task.status,
+          due_date: task.due_date || '',
+          tag_ids: task.tags ? task.tags.map((t) => t.id) : [],
+        },
+      });
     } else {
-      form.value = {
-        title: '',
-        description: '',
-        priority_id: priorities.value && priorities.value.length > 0 ? priorities.value[0].id : null,
-        status: 'pending',
-        due_date: '',
-        tag_ids: [],
-      };
+      resetForm({
+        values: {
+          title: '',
+          description: '',
+          priority_id: priorities.value && priorities.value.length > 0 ? priorities.value[0].id : null,
+          status: 'pending',
+          due_date: '',
+          tag_ids: [],
+        },
+      });
     }
   },
   { immediate: true }
 );
 
-function onSubmit() {
-  if (!form.value.title || !form.value.priority_id) return;
+const onSubmit = handleSubmit(async (values) => {
+  const payload: CreateTaskPayload | UpdateTaskPayload = {
+    title: values.title,
+    description: values.description || null,
+    priority_id: values.priority_id!,
+    status: values.status as TaskStatus,
+    due_date: values.due_date || null,
+    tag_ids: values.tag_ids || [],
+  };
 
-  if (isEditMode.value && taskStore.selectedTask) {
-    const payload: UpdateTaskPayload = {
-      title: form.value.title,
-      description: form.value.description || null,
-      priority_id: form.value.priority_id,
-      status: form.value.status,
-      due_date: form.value.due_date || null,
-      tag_ids: form.value.tag_ids,
-    };
-    updateMutation.mutate({ id: taskStore.selectedTask.id, payload });
-  } else {
-    const payload: CreateTaskPayload = {
-      title: form.value.title,
-      description: form.value.description || null,
-      priority_id: form.value.priority_id,
-      status: form.value.status,
-      due_date: form.value.due_date || null,
-      tag_ids: form.value.tag_ids,
-    };
-    createMutation.mutate(payload);
+  try {
+    if (isEditMode.value && taskStore.selectedTask) {
+      await updateMutation.mutateAsync({ id: taskStore.selectedTask.id, payload });
+    } else {
+      await createMutation.mutateAsync(payload);
+    }
+  } catch (error: any) {
+    const backendErrors = extractBackendErrors(error);
+    if (Object.keys(backendErrors).length > 0) {
+      setErrors(backendErrors);
+    }
   }
-}
+});
 </script>

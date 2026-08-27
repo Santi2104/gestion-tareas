@@ -21,7 +21,7 @@ export function useTaskMutations() {
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             Notify.create({
                 type: "positive",
-                message: "Task created successfully!",
+                message: "¡Tarea creada exitosamente!",
                 position: "top-right",
                 timeout: 3000,
             });
@@ -41,7 +41,7 @@ export function useTaskMutations() {
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             Notify.create({
                 type: "positive",
-                message: "Task updated successfully!",
+                message: "¡Tarea actualizada exitosamente!",
                 position: "top-right",
                 timeout: 3000,
             });
@@ -56,7 +56,7 @@ export function useTaskMutations() {
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             Notify.create({
                 type: "positive",
-                message: "Task status updated!",
+                message: "¡Estado de la tarea actualizado!",
                 position: "top-right",
                 timeout: 2500,
             });
@@ -69,9 +69,17 @@ export function useTaskMutations() {
             queryClient.invalidateQueries({ queryKey: ["tasks"] });
             Notify.create({
                 type: "positive",
-                message: "Task deleted successfully!",
+                message: "¡Tarea eliminada exitosamente!",
                 position: "top-right",
                 timeout: 3000,
+            });
+        },
+        onError: () => {
+            Notify.create({
+                type: "negative",
+                message: "No se pudo eliminar la tarea. Intenta nuevamente.",
+                position: "top-right",
+                timeout: 4000,
             });
         },
     });
