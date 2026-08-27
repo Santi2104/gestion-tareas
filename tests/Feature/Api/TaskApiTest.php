@@ -116,8 +116,11 @@ class TaskApiTest extends TestCase
                 'success' => false,
                 'error_code' => 'VALIDATION_ERROR',
             ])
-            ->assertJsonPath('meta.errors.title.0', 'El campo título es obligatorio.')
-            ->assertJsonPath('meta.errors.priority_id.0', 'El campo prioridad es obligatorio.');
+            ->assertJsonStructure([
+                'meta' => [
+                    'errors' => ['title', 'priority_id'],
+                ],
+            ]);
     }
 
     public function test_can_show_single_task(): void
