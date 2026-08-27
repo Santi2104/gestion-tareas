@@ -8,12 +8,31 @@ use App\Enums\TaskStatus;
 use App\Models\Priority;
 use App\Models\Tag;
 use App\Models\Task;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class TaskApiTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected User $user;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->user = User::factory()->create();
+        $this->actingAs($this->user);
+    }
+
+    public function test_unauthenticated_user_cannot_access_tasks_api(): void
+    {
+        $this->app['auth']->forgetGuards();
+
+        $response = $this->getJson(route('tasks.index'));
+
+        $response->assertUnauthorized();
+    }
 
     public function test_can_list_all_tasks(): void
     {

@@ -8,7 +8,7 @@
                         O
                         <router-link
                             :to="{ name: 'register' }"
-                            class="text-primary"
+                            class="text-primary text-weight-medium"
                         >
                             regístrate si no tienes una cuenta
                         </router-link>
@@ -62,14 +62,6 @@
                                 label="Recordarme"
                                 color="primary"
                             />
-                            <q-btn
-                                flat
-                                no-caps
-                                label="¿Olvidaste tu contraseña?"
-                                color="primary"
-                                size="sm"
-                                @click="$q.notify('Funcionalidad próximamente')"
-                            />
                         </div>
 
                         <q-btn
@@ -77,7 +69,7 @@
                             type="submit"
                             color="primary"
                             label="Iniciar Sesión"
-                            :loading="loading"
+                            :loading="authStore.loading"
                             class="full-width"
                             size="lg"
                             no-caps
@@ -91,9 +83,15 @@
 
 <script lang="ts" setup>
 import { ref } from "vue";
+import { useRouter, useRoute } from "vue-router";
 import { useQuasar } from "quasar";
+import { useAuthStore } from "../stores/useAuthStore";
+import { getSafeRedirectUrl } from "../utils/redirectSanitizer";
 
 const $q = useQuasar();
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
 
 const form = ref({
     email: "",
@@ -101,22 +99,33 @@ const form = ref({
     remember: false,
 });
 
-const loading = ref(false);
 const showPassword = ref(false);
 
 const handleLogin = async () => {
-    loading.value = true;
-
-    // TODO: Implementar lógica de login
-    console.log("Login attempt:", form.value);
-
-    // Simulamos una llamada async
-    setTimeout(() => {
-        loading.value = false;
+    try {
+        await authStore.login(form.value);
         $q.notify({
             type: "positive",
-            message: "Funcionalidad de login próximamente",
+            message: "¡Sesión iniciada correctamente!",
+            position: "top-right",
+            timeout: 3000,
         });
-    }, 1000);
+        const redirectTarget = getSafeRedirectUrl(route.query.redirect);
+        await router.push(redirectTarget);
+    } catch (error: any) {
+        const serverMessage = error.response?.data?.message;
+        const message =
+            error.response?.status === 422
+                ? "Credenciales incorrectas. Por favor verifica tu correo y contraseña."
+                : serverMessage ||
+                  "Error al iniciar sesión. Intenta nuevamente.";
+
+        $q.notify({
+            type: "warning",
+            message: message,
+            position: "top-right",
+            timeout: 4000,
+        });
+    }
 };
 </script>

@@ -14,17 +14,25 @@ const routes: RouteRecordRaw[] = [
                 path: "/login",
                 name: "login",
                 component: () => import("../modules/auth/pages/LoginPage.vue"),
+                meta: { requiresGuest: true },
             },
             {
                 path: "/register",
                 name: "register",
                 component: () => import("../modules/auth/pages/RegisterPage.vue"),
+                meta: { requiresGuest: true },
+            },
+            {
+                path: ":pathMatch(.*)*",
+                name: "not-found",
+                component: () => import("../pages/NotFoundPage.vue"),
             },
         ],
     },
     {
         path: "/tasks",
         component: () => import("../layout/AuthLayout.vue"),
+        meta: { requiresAuth: true },
         children: [
             {
                 path: "",

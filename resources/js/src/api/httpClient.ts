@@ -15,14 +15,41 @@ httpClient.interceptors.response.use(
     (response) => response,
     (error) => {
         if (error.response) {
+            const status = error.response.status;
+            const requestUrl = error.config?.url || "";
+
+            // Silence global error toasts for auth endpoints managed directly by form pages
+            if (
+                requestUrl.endsWith("/user") ||
+                requestUrl.endsWith("/api/user") ||
+                requestUrl.endsWith("/login") ||
+                requestUrl.endsWith("/api/login") ||
+                requestUrl.endsWith("/register") ||
+                requestUrl.endsWith("/api/register")
+            ) {
+                return Promise.reject(error);
+            }
+
+            // Handle active 401 errors (session expiration on protected resources)
+            if (status === 401) {
+                Notify.create({
+                    type: "warning",
+                    message: "Tu sesión ha expirado o no estás autenticado.",
+                    caption: "Por favor, inicia sesión para continuar.",
+                    position: "top-right",
+                    timeout: 4000,
+                });
+                return Promise.reject(error);
+            }
+
             const data = error.response.data as ApiErrorResponse;
-            const message = data.message || "An unexpected error occurred.";
+            const message = data.message || "Ha ocurrido un error inesperado.";
 
             Notify.create({
                 type: "negative",
                 message: message,
                 caption: data.error_code
-                    ? `Code: ${data.error_code}`
+                    ? `Código: ${data.error_code}`
                     : undefined,
                 position: "top-right",
                 timeout: 4000,
@@ -31,7 +58,7 @@ httpClient.interceptors.response.use(
             Notify.create({
                 type: "negative",
                 message:
-                    "Unable to connect to the server. Please check your network connection.",
+                    "No se pudo conectar con el servidor. Verifica tu conexión a internet.",
                 position: "top-right",
                 timeout: 4000,
             });

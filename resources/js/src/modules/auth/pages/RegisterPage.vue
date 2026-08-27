@@ -8,7 +8,7 @@
                         O
                         <router-link
                             :to="{ name: 'login' }"
-                            class="text-primary"
+                            class="text-primary text-weight-medium"
                         >
                             inicia sesión si ya tienes una cuenta
                         </router-link>
@@ -110,19 +110,12 @@
                             </template>
                         </q-input>
 
-                        <q-checkbox
-                            v-model="form.terms"
-                            label="Acepto los términos y condiciones"
-                            color="primary"
-                            :rules="[(val: boolean) => !!val || 'Debes aceptar los términos']"
-                        />
-
                         <q-btn
                             unelevated
                             type="submit"
                             color="primary"
                             label="Crear Cuenta"
-                            :loading="loading"
+                            :loading="authStore.loading"
                             :disable="!isFormValid"
                             class="full-width"
                             size="lg"
@@ -137,19 +130,21 @@
 
 <script lang="ts" setup>
 import { ref, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
+import { useAuthStore } from "../stores/useAuthStore";
 
 const $q = useQuasar();
+const router = useRouter();
+const authStore = useAuthStore();
 
 const form = ref({
     name: "",
     email: "",
     password: "",
     password_confirmation: "",
-    terms: false,
 });
 
-const loading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
@@ -161,26 +156,32 @@ const isFormValid = computed(() => {
         form.value.password &&
         form.value.password.length >= 8 &&
         form.value.password_confirmation &&
-        form.value.password === form.value.password_confirmation &&
-        form.value.terms
+        form.value.password === form.value.password_confirmation
     );
 });
 
 const handleRegister = async () => {
     if (!isFormValid.value) return;
 
-    loading.value = true;
-
-    // TODO: Implementar lógica de registro
-    console.log("Register attempt:", form.value);
-
-    // Simulamos una llamada async
-    setTimeout(() => {
-        loading.value = false;
+    try {
+        await authStore.register(form.value);
         $q.notify({
             type: "positive",
-            message: "Funcionalidad de registro próximamente",
+            message: "¡Cuenta registrada exitosamente!",
+            position: "top-right",
+            timeout: 3000,
         });
-    }, 1000);
+        await router.push({ name: "tasks" });
+    } catch (error: any) {
+        const message =
+            error.response?.data?.message ||
+            "Error al registrar la cuenta. Verifica los datos ingresados.";
+        $q.notify({
+            type: "negative",
+            message: message,
+            position: "top-right",
+            timeout: 4000,
+        });
+    }
 };
 </script>
