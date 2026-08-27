@@ -1,7 +1,6 @@
 import { RouteRecordRaw } from "vue-router";
 
 const routes: RouteRecordRaw[] = [
-    // Rutas para usuarios no autenticados (con GuessLayout)
     {
         path: "/",
         component: () => import("../layout/GuessLayout.vue"),
@@ -19,23 +18,24 @@ const routes: RouteRecordRaw[] = [
             {
                 path: "/register",
                 name: "register",
-                component: () =>
-                    import("../modules/auth/pages/RegisterPage.vue"),
+                component: () => import("../modules/auth/pages/RegisterPage.vue"),
             },
         ],
     },
-
-    // Rutas para usuarios autenticados (sin layout por ahora)
     {
-        path: "/dashboard",
-        component: () => import("../layout/AuthLayout.vue"), // Temporal
+        path: "/tasks",
+        component: () => import("../layout/AuthLayout.vue"),
         children: [
             {
                 path: "",
-                name: "dashboard",
-                component: () => import("../modules/DashboardPage.vue"),
+                name: "tasks",
+                component: () => import("../modules/tasks/pages/TaskListPage.vue"),
             },
         ],
+    },
+    {
+        path: "/dashboard",
+        redirect: "/tasks",
     },
 ];
 

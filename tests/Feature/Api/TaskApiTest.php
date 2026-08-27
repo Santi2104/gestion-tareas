@@ -115,7 +115,7 @@ class TaskApiTest extends TestCase
     public function test_can_update_task(): void
     {
         $task = Task::factory()->create(['title' => 'Old Title']);
-        $newPriority = Priority::factory()->create(['name' => PriorityLevel::High]);
+        $newPriority = Priority::firstOrCreate(['name' => PriorityLevel::High->value]);
 
         $payload = [
             'title' => 'Updated Title',

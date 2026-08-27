@@ -3,7 +3,7 @@ import { createApp } from "vue";
 import { createPinia } from "pinia";
 import { VueQueryPlugin } from "@tanstack/vue-query";
 import router from "./src/router/index";
-import { Quasar, Notify } from "quasar";
+import { Quasar, Notify, Dialog } from "quasar";
 import quasarLang from "quasar/lang/es";
 
 import "@quasar/extras/material-icons/material-icons.css";
@@ -20,6 +20,7 @@ myApp.use(VueQueryPlugin);
 myApp.use(Quasar, {
     plugins: {
         Notify,
+        Dialog,
     },
     lang: quasarLang,
 });
