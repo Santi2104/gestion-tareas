@@ -1,104 +1,93 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Sistema de Gestión de Tareas
 
-# Laravel Vue Quasar Template
+Aplicación web fullstack para la gestión de tareas desarrollada con **Laravel 12**, **Vue 3 + TypeScript**, **Quasar Framework** y **MariaDB**.
 
-Una plantilla base para proyectos web que combina Laravel como backend y Vue.js como frontend, con autenticación configurada usando Laravel Fortify.
+---
 
-## Características
+## Requisitos Previos
 
--   Laravel 12 con Vue.js 3 y TypeScript
--   Autenticación de usuarios con Laravel Fortify
--   TypeScript configurado
--   Vite para el build del frontend
--   Base de datos SQLite configurada
+- [Docker](https://docs.docker.com/get-docker/) y [Docker Compose](https://docs.docker.com/compose/) instalados en el sistema.
 
-## Instalación
+---
 
-1. Clona el repositorio:
+## Inicio Rápido (Modo Demo / Producción)
+
+Para levantar toda la aplicación en un solo paso (con assets compilados, servidor web Nginx, backend PHP-FPM, MariaDB y datos de prueba sembrados automáticamente):
 
 ```bash
-git clone <url-del-repositorio>
-cd plantilla-laravel-vue
+docker compose -f docker-compose.prod.yml up -d --build
 ```
 
-2. Instala las dependencias de PHP:
+Una vez completado el arranque, abre tu navegador en:
+
+**[http://localhost:8080](http://localhost:8080)**
+
+### Credenciales de Acceso (Usuario de Prueba)
+
+- **Email:** `test@example.com`
+- **Contraseña:** `password`
+
+_(También puedes registrar un nuevo usuario desde la pantalla de registro)._
+
+Para detener los contenedores:
 
 ```bash
-composer install
+docker compose -f docker-compose.prod.yml down
 ```
 
-3. Instala las dependencias de Node.js:
+---
 
-```bash
-npm install
-```
+## Modo Desarrollo (Laravel Sail)
 
-4. Copia el archivo de configuración:
+Si deseas trabajar en desarrollo local:
 
-```bash
-cp .env.example .env
-```
+1. **Copiar el archivo de entorno:**
 
-5. Genera la clave de la aplicación:
+    ```bash
+    cp .env.example .env
+    ```
 
-```bash
-php artisan key:generate
-```
+2. **Instalar dependencias de PHP (si no cuentas con Composer local):**
 
-6. Ejecuta las migraciones:
+    ```bash
+    docker run --rm \
+        -u "$(id -u):$(id -g)" \
+        -v "$(pwd):/var/www/html" \
+        -w /var/www/html \
+        laravelsail/php84-composer:latest \
+        composer install --ignore-platform-reqs
+    ```
 
-```bash
-php artisan migrate
-```
+    _(O directamente `composer install` si tienes PHP/Composer instalado)._
 
-## Uso
+3. **Iniciar los servicios con Sail:**
 
-### Opción 1: Desarrollo Local
+    ```bash
+    ./vendor/bin/sail up -d
+    ```
 
-1. Inicia el servidor de desarrollo de Laravel:
+4. **Generar la clave de la aplicación:**
 
-```bash
-php artisan serve
-```
+    ```bash
+    ./vendor/bin/sail artisan key:generate
+    ```
 
-2. En otra terminal, inicia el servidor de desarrollo de Vite:
+5. **Instalar dependencias de Node.js:**
 
-```bash
-npm run dev
-```
+    ```bash
+    ./vendor/bin/sail npm install
+    ```
 
-3. Visita `http://localhost:8000` en tu navegador.
+6. **Ejecutar migraciones y seeders:**
 
-4. Si en tu equipo tienes instalado composer, puedes iniciar tanto servidor como npm con un solo comando:
+    ```bash
+    ./vendor/bin/sail artisan migrate --seed
+    ```
 
-```bash
-composer run dev
-```
+7. **Iniciar el servidor de desarrollo de Vite:**
 
-### Opción 2: Desarrollo con Docker y Laravel Sail
+    ```bash
+    ./vendor/bin/sail npm run dev
+    ```
 
-Laravel Sail proporciona un entorno de desarrollo Docker ligero para ejecutar aplicaciones Laravel.
-
-1. Asegúrate de tener Docker instalado en tu sistema.
-
-2. Inicia los contenedores con Sail:
-
-```bash
-./vendor/bin/sail up -d
-```
-
-3. En otra terminal, inicia el servidor de desarrollo de Vite:
-
-```bash
-npm run dev
-```
-
-4. Visita `http://localhost` en tu navegador.
-
-5. Para detener los contenedores:
-
-```bash
-./vendor/bin/sail down
-```
-
-**Nota:** Si es la primera vez que usas Sail, el comando `sail up` puede tardar varios minutos mientras descarga las imágenes de Docker necesarias.
+8. Acceder en **[http://localhost](http://localhost)**.

@@ -12,6 +12,7 @@
         "php": "^8.2",
         "laravel/fortify": "^1.39.0",
         "laravel/framework": "^13.29.0",
+        "laravel/sanctum": "^4.3",
         "laravel/tinker": "^3.0.2"
     },
     "require-dev": {

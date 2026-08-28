@@ -8,7 +8,7 @@
                         O
                         <router-link
                             :to="{ name: 'login' }"
-                            class="text-primary"
+                            class="text-primary text-weight-medium"
                         >
                             inicia sesión si ya tienes una cuenta
                         </router-link>
@@ -16,15 +16,18 @@
                 </q-card-section>
 
                 <q-card-section>
-                    <q-form @submit="handleRegister" class="q-gutter-md">
+                    <q-form
+                        @submit.prevent="handleRegister"
+                        class="q-gutter-md"
+                    >
                         <q-input
-                            v-model="form.name"
+                            v-model="name"
+                            @blur="handleNameBlur"
                             type="text"
                             label="Nombre completo"
                             outlined
-                            :rules="[
-                                (val) => !!val || 'El nombre es requerido',
-                            ]"
+                            :error="nameMeta.touched && !!errors.name"
+                            :error-message="errors.name"
                             autocomplete="name"
                         >
                             <template v-slot:prepend>
@@ -33,16 +36,13 @@
                         </q-input>
 
                         <q-input
-                            v-model="form.email"
+                            v-model="email"
+                            @blur="handleEmailBlur"
                             type="email"
                             label="Correo electrónico"
                             outlined
-                            :rules="[
-                                (val) => !!val || 'El email es requerido',
-                                (val) =>
-                                    /\S+@\S+\.\S+/.test(val) ||
-                                    'Email inválido',
-                            ]"
+                            :error="emailMeta.touched && !!errors.email"
+                            :error-message="errors.email"
                             autocomplete="email"
                         >
                             <template v-slot:prepend>
@@ -51,15 +51,13 @@
                         </q-input>
 
                         <q-input
-                            v-model="form.password"
+                            v-model="password"
+                            @blur="handlePasswordBlur"
                             :type="showPassword ? 'text' : 'password'"
                             label="Contraseña"
                             outlined
-                            :rules="[
-                                (val) => !!val || 'La contraseña es requerida',
-                                (val) =>
-                                    val.length >= 8 || 'Mínimo 8 caracteres',
-                            ]"
+                            :error="passwordMeta.touched && !!errors.password"
+                            :error-message="errors.password"
                             autocomplete="new-password"
                         >
                             <template v-slot:prepend>
@@ -79,16 +77,16 @@
                         </q-input>
 
                         <q-input
-                            v-model="form.password_confirmation"
+                            v-model="password_confirmation"
+                            @blur="handleConfirmBlur"
                             :type="showConfirmPassword ? 'text' : 'password'"
                             label="Confirmar contraseña"
                             outlined
-                            :rules="[
-                                (val) => !!val || 'Confirma tu contraseña',
-                                (val) =>
-                                    val === form.password ||
-                                    'Las contraseñas no coinciden',
-                            ]"
+                            :error="
+                                confirmMeta.touched &&
+                                !!errors.password_confirmation
+                            "
+                            :error-message="errors.password_confirmation"
                             autocomplete="new-password"
                         >
                             <template v-slot:prepend>
@@ -110,20 +108,12 @@
                             </template>
                         </q-input>
 
-                        <q-checkbox
-                            v-model="form.terms"
-                            label="Acepto los términos y condiciones"
-                            color="primary"
-                            :rules="[(val: boolean) => !!val || 'Debes aceptar los términos']"
-                        />
-
                         <q-btn
                             unelevated
                             type="submit"
                             color="primary"
                             label="Crear Cuenta"
-                            :loading="loading"
-                            :disable="!isFormValid"
+                            :loading="authStore.loading"
                             class="full-width"
                             size="lg"
                             no-caps
@@ -136,51 +126,93 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from "vue";
+import { ref } from "vue";
+import { useRouter } from "vue-router";
 import { useQuasar } from "quasar";
+import { useForm, useField } from "vee-validate";
+import * as yup from "yup";
+import { useAuthStore } from "../stores/useAuthStore";
+import { extractBackendErrors } from "../../../utils/backendErrorMapper";
 
 const $q = useQuasar();
+const router = useRouter();
+const authStore = useAuthStore();
 
-const form = ref({
-    name: "",
-    email: "",
-    password: "",
-    password_confirmation: "",
-    terms: false,
+const schema = yup.object({
+    name: yup.string().required("El nombre es requerido"),
+    email: yup
+        .string()
+        .required("El correo electrónico es requerido")
+        .email("Formato de correo electrónico inválido"),
+    password: yup
+        .string()
+        .required("La contraseña es requerida")
+        .min(8, "La contraseña debe tener al menos 8 caracteres"),
+    password_confirmation: yup
+        .string()
+        .required("Confirma tu contraseña")
+        .oneOf([yup.ref("password")], "Las contraseñas no coinciden"),
 });
 
-const loading = ref(false);
+const { handleSubmit, errors, setErrors } = useForm({
+    validationSchema: schema,
+    initialValues: {
+        name: "",
+        email: "",
+        password: "",
+        password_confirmation: "",
+    },
+});
+
+const {
+    value: name,
+    handleBlur: handleNameBlur,
+    meta: nameMeta,
+} = useField<string>("name");
+const {
+    value: email,
+    handleBlur: handleEmailBlur,
+    meta: emailMeta,
+} = useField<string>("email");
+const {
+    value: password,
+    handleBlur: handlePasswordBlur,
+    meta: passwordMeta,
+} = useField<string>("password");
+const {
+    value: password_confirmation,
+    handleBlur: handleConfirmBlur,
+    meta: confirmMeta,
+} = useField<string>("password_confirmation");
+
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
-const isFormValid = computed(() => {
-    return (
-        form.value.name &&
-        form.value.email &&
-        /\S+@\S+\.\S+/.test(form.value.email) &&
-        form.value.password &&
-        form.value.password.length >= 8 &&
-        form.value.password_confirmation &&
-        form.value.password === form.value.password_confirmation &&
-        form.value.terms
-    );
-});
-
-const handleRegister = async () => {
-    if (!isFormValid.value) return;
-
-    loading.value = true;
-
-    // TODO: Implementar lógica de registro
-    console.log("Register attempt:", form.value);
-
-    // Simulamos una llamada async
-    setTimeout(() => {
-        loading.value = false;
+const handleRegister = handleSubmit(async (values) => {
+    try {
+        await authStore.register(values);
         $q.notify({
             type: "positive",
-            message: "Funcionalidad de registro próximamente",
+            message: "¡Cuenta registrada exitosamente!",
+            position: "top-right",
+            timeout: 3000,
         });
-    }, 1000);
-};
+        await router.push({ name: "tasks" });
+    } catch (error: any) {
+        const backendErrors = extractBackendErrors(error);
+        if (Object.keys(backendErrors).length > 0) {
+            setErrors(backendErrors);
+        } else {
+            const message =
+                error.response?.data?.message ||
+                "Error al registrar la cuenta. Verifica los datos ingresados.";
+            $q.notify({
+                type: "negative",
+                message: message,
+                position: "top-right",
+                timeout: 4000,
+            });
+        }
+    }
+});
 </script>

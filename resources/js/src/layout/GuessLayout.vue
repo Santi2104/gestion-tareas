@@ -1,6 +1,8 @@
 <script lang="ts" setup>
 import { computed } from "vue";
+import { useAuthStore } from "../modules/auth/stores/useAuthStore";
 
+const authStore = useAuthStore();
 const currentYear = computed(() => new Date().getFullYear());
 </script>
 
@@ -14,13 +16,23 @@ const currentYear = computed(() => new Date().getFullYear());
                         :to="{ name: 'welcome' }"
                         class="text-decoration-none text-primary"
                     >
-                        Laravel Vue
+                        Gestión de Tareas
                     </router-link>
                 </q-toolbar-title>
 
                 <q-space />
 
-                <div class="q-gutter-sm">
+                <div v-if="authStore.isAuthenticated" class="q-gutter-sm">
+                    <q-btn
+                        unelevated
+                        no-caps
+                        label="Mis Tareas"
+                        :to="{ name: 'tasks' }"
+                        color="primary"
+                        icon="task"
+                    />
+                </div>
+                <div v-else class="q-gutter-sm">
                     <q-btn
                         flat
                         no-caps
@@ -49,10 +61,7 @@ const currentYear = computed(() => new Date().getFullYear());
             <q-toolbar class="justify-center">
                 <div class="text-center">
                     <div class="text-body2">
-                        © {{ currentYear }} Plantilla Laravel Vue
-                    </div>
-                    <div class="text-caption text-grey-5">
-                        Plantilla base para proyectos web
+                        © {{ currentYear }} Gestión de Tareas - Laravel + Vue
                     </div>
                 </div>
             </q-toolbar>
