@@ -26,16 +26,12 @@ RUN apk add --no-cache \
     git \
     unzip \
     libzip-dev \
-    sqlite-dev \
     icu-dev \
-    oniguruma-dev \
     && docker-php-ext-install \
-    pdo_sqlite \
     pdo_mysql \
     zip \
     bcmath \
-    intl \
-    mbstring
+    intl
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
@@ -44,6 +40,9 @@ COPY composer.json composer.lock ./
 RUN composer install --no-interaction --prefer-dist --no-progress --no-scripts
 
 COPY . .
+
+# Copy compiled frontend assets from Stage 1 so view rendering tests find the Vite manifest
+COPY --from=frontend-builder /app/public/build /var/www/html/public/build
 
 # Dump autoload with scripts enabled
 RUN composer dump-autoload --optimize
@@ -65,13 +64,11 @@ RUN apk add --no-cache \
     bash \
     libzip-dev \
     icu-dev \
-    oniguruma-dev \
     && docker-php-ext-install \
     pdo_mysql \
     zip \
     bcmath \
     intl \
-    mbstring \
     opcache
 
 # Copy clean backend vendor and code
