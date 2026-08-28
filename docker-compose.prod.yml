@@ -1,0 +1,76 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      APP_NAME: "Gestion de Tareas"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: "base64:omVC7wiK7x3ociwbkf/9unGq8RFAhoVsI+8Q6TW4G3k="
+      APP_URL: "http://localhost:8080"
+      APP_LOCALE: es
+      APP_FALLBACK_LOCALE: en
+      SANCTUM_STATEFUL_DOMAINS: "localhost,localhost:8080,127.0.0.1,127.0.0.1:8080"
+      SESSION_SECURE_COOKIE: "false"
+      DB_CONNECTION: mysql
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_DATABASE: gestion_tareas
+      DB_USERNAME: laravel
+      DB_PASSWORD: secret
+      SESSION_DRIVER: database
+      CACHE_STORE: database
+      QUEUE_CONNECTION: database
+    volumes:
+      - app_public:/var/www/html/public
+      - app_storage:/var/www/html/storage
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - app-network
+
+  web:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    volumes:
+      - app_public:/var/www/html/public:ro
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - app-network
+
+  db:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: gestion_tareas
+      MYSQL_USER: laravel
+      MYSQL_PASSWORD: secret
+      MYSQL_ROOT_PASSWORD: root_secret
+    volumes:
+      - db_data:/var/lib/mysql
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  db_data:
+    driver: local
+  app_public:
+    driver: local
+  app_storage:
+    driver: local
