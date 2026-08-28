@@ -23,6 +23,12 @@ done
 
 echo "Base de datos conectada correctamente."
 
+if [ -z "${APP_KEY}" ]; then
+    echo "APP_KEY no definida. Generando una nueva clave de aplicación..."
+    APP_KEY=$(php -r "echo 'base64:' . base64_encode(random_bytes(32));")
+    export APP_KEY
+fi
+
 echo "📦 Ejecutando migraciones y seeders de prueba..."
 php artisan migrate --force --seed
 

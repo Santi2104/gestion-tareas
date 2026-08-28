@@ -8,7 +8,7 @@ services:
       APP_NAME: "Gestion de Tareas"
       APP_ENV: production
       APP_DEBUG: "false"
-      APP_KEY: "base64:omVC7wiK7x3ociwbkf/9unGq8RFAhoVsI+8Q6TW4G3k="
+      APP_KEY: "${APP_KEY:-}"
       APP_URL: "http://localhost:8080"
       APP_LOCALE: es
       APP_FALLBACK_LOCALE: en
